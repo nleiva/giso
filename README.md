@@ -148,11 +148,15 @@ ncs5500-dpa-4.0.0.2-r6225.CSCvg05355.x86_64.rpm          ncs5500-k9sec-3.2.0.0-r
 
 2. Create the image using the [Dockerfile](Dockerfile) included in the repo. `giso-py` is an arbitrary name for the container image we are building.
 
-`docker build -t giso-py .`
+```console
+docker build -t giso-py .
+```
 
 3. Run and connect to the container.
 
-`docker run --privileged=true -v /Users/nleiva/ncs5500:/ncs5500 -i -t --rm giso-py /bin/bash`
+```console
+docker run --privileged=true -v /Users/nleiva/ncs5500:/ncs5500 -i -t --rm giso-py /bin/bash
+```
 
 * Mount the directory with the files: `-v /host/directory:/container/directory`
 * Access to Loop devices: `--privileged=true`
@@ -162,7 +166,9 @@ ncs5500-dpa-4.0.0.2-r6225.CSCvg05355.x86_64.rpm          ncs5500-k9sec-3.2.0.0-r
 
 3. Once inside the container, create a loop device.
 
-`losetup -f`
+```console
+losetup -f
+```
 
 4. Run the script. The label could come as a ENV variable.
 
@@ -181,6 +187,6 @@ $ ls /Users/nleiva/ncs5500/*golden*
 
 ### Good to know about Docker
 
-* stop all containers: `docker kill $(docker ps -q)`
-* remove all containers: `docker rm $(docker ps -a -q)`
-* remove all docker images: `docker rmi $(docker images -q)`
+* Stop all containers: `docker kill $(docker ps -q)`
+* Remove all containers: `docker rm $(docker ps -a -q)`
+* Remove all docker images: `docker rmi $(docker images -q)`
