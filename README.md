@@ -127,3 +127,60 @@ Golden ISO Image Location: /home/nleiva/giso-6225/ncs5500-goldenk9-x.iso-6.2.25.
 
 Detail logs: /home/nleiva/giso-6225/Giso_build.log-2018-02-13:22:29:12.846200
 ```
+
+## Running the script on a Container
+
+If you want to run this in your MAC, an Ubuntu container might come in handy.
+
+1. Have the files ready in the host.
+
+```console
+$ pwd
+/Users/nleiva/ncs5500
+```
+
+```console
+$ ls
+ncs5500-dpa-4.0.0.1-r6225.CSCvg54541.x86_64.rpm          ncs5500-isis-2.2.0.0-r6225.x86_64.rpm
+ncs5500-dpa-4.0.0.2-r6225.CSCvg05355.x86_64.rpm          ncs5500-k9sec-3.2.0.0-r6225.x86_64.rpm
+...
+```
+
+2. Create the image using the [Dockerfile](Dockerfile) included in the repo. `giso-py` is an arbitrary name for the container image we are building.
+
+`docker build -t giso-py .`
+
+3. Run and connect to the container.
+
+`docker run --privileged=true -v /Users/nleiva/ncs5500:/ncs5500 -i -t --rm giso-py /bin/bash`
+
+* Mount the directory with the files: `-v /host/directory:/container/directory`
+* Access to Loop devices: `--privileged=true`
+* Assigns a pseudo-tty: `-t`
+* Allows you to make an interactive connection: `-i`
+* Automatically remove the container when the process exits: `--rm`
+
+3. Once inside the container, create a loop device.
+
+`losetup -f`
+
+4. Run the script. The label could come as a ENV variable.
+
+```console
+export label=version1
+python gisobuild.py -i ncs5500/ncs5500-mini-x-6.2.25.iso -r ncs5500/. -l $label
+mv *.$label ncs5500
+```
+
+5. The image should now be available in the host.
+
+```console
+$ ls /Users/nleiva/ncs5500/*golden*
+/Users/nleiva/ncs5500/ncs5500-goldenk9-x.iso-6.2.25.version1
+```
+
+### Good to know about Docker
+
+* stop all containers: `docker kill $(docker ps -q)`
+* remove all containers: `docker rm $(docker ps -a -q)`
+* remove all docker images: `docker rmi $(docker images -q)`
