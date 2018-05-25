@@ -128,7 +128,16 @@ Golden ISO Image Location: /home/nleiva/giso-6225/ncs5500-goldenk9-x.iso-6.2.25.
 Detail logs: /home/nleiva/giso-6225/Giso_build.log-2018-02-13:22:29:12.846200
 ```
 
-## Running the script on a Container
+## Script locaction
+
+
+```console
+RP/0/RP0/CPU0:router#bash ls -ltr /pkg/bin/gisobuild.py
+Fri May 25 04:10:14.812 UTC
+lrwxrwxrwx 1 root root 72 May 25 03:24 /pkg/bin/gisobuild.py -> /opt/cisco/XR/packages/ncs5500-infra-4.2.0.0-r63307I/rp/bin/gisobuild.py
+```
+
+## Running the script inside a Container
 
 If you want to run this in your MAC, an Ubuntu container might come in handy.
 
