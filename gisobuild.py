@@ -4,7 +4,7 @@
 #
 # utility to build golden iso
 #
-# Copyright (c) 2015-2017 by cisco Systems, Inc.
+# Copyright (c) 2015-2018 by Cisco Systems, Inc.
 # All rights reserved.
 # =============================================================================
 from datetime import datetime
@@ -21,6 +21,7 @@ import subprocess
 import sys
 import tempfile
 import yaml
+import string
 
 __version__ = '0.7'
 GISO_PKG_FMT_VER = 1.0
@@ -1160,7 +1161,7 @@ class Iso(object):
 
 
 class Giso:
-    SUPPORTED_PLATFORMS = ["asr9k", "ncs1k", "ncs5k", "ncs5500", "ncs6k", "ncs540"]
+    SUPPORTED_PLATFORMS = ["asr9k", "ncs1k", "ncs5k", "ncs5500", "ncs6k", "ncs560","ncs540", 'iosxrwb']
     SUPPORTED_BASE_ISO = ["mini", "minik9"]
     SMU_CONFIG_SUMMARY_FILE = "giso_summary.txt"
     VM_TYPE = ["XR", "CALVADOS", "HOST"]
@@ -1168,7 +1169,7 @@ class Giso:
     GOLDEN_STRING = "golden"
     GOLDEN_K9_STRING = "goldenk9"
     GISO_INFO_TXT = "giso_info.txt"
-    NESTED_ISO_PLATFORMS = ["ncs5500", "ncs540"] 
+    NESTED_ISO_PLATFORMS = ["ncs5500", "ncs560", "ncs540"]
 
     def __init__(self):
         self.repo_path = None
@@ -1394,9 +1395,12 @@ class Giso:
         fd.write(yaml.dump(mdata, default_flow_style=False))
         fd.close()
 
-        self.giso_name = '%s.%s-%s.%s' % (giso_name_string, "iso",
+        #self.giso_name = '%s.%s-%s.%s' % (giso_name_string, "iso",
+        #                                  iso.get_iso_version(), 
+        #                                  self.giso_ver_label)
+        self.giso_name = '%s-%s-%s.%s' % (giso_name_string,
                                           iso.get_iso_version(), 
-                                          self.giso_ver_label)
+                                          self.giso_ver_label, "iso")
 
     def update_grub_cfg(self, iso):
         # update grub.cfg file with giso_boot parameter 
@@ -1532,6 +1536,8 @@ def parsecli():
                         help='Golden ISO Label')
     parser.add_argument('-m', '--migration', dest='migTar', action='store_true',
                         help='To build Migration tar only for ASR9k')
+    parser.add_argument('-x', '--x86_only', dest='x86_only', action='store_true',
+                        help='Use only x86_64 rpms even if arm is applicable for the platform')
     version_string = "%%(prog)s (version %s)" %(__version__)
     parser.add_argument('-v', '--version', 
                         action='version',                    
@@ -1587,10 +1593,13 @@ def parsecli():
         logger.error('Error: Multiple Golden ISO labels are given.')
         logger.error('Info : Please provide unique Golden ISO label.')
         sys.exit(-1)
-    elif  not  pargs.gisoLabel[0].isalnum():
-        logger.error('Error: label %s contains characters other than alphanumeric', pargs.gisoLabel[0])
-        logger.error('Info : Non-alphanumeric characters are not allowed in GISO label ')
-        sys.exit(-1)
+    else:
+        temp_label = pargs.gisoLabel[0]
+        new_label = string.replace(temp_label, '_', '')
+        if not new_label.isalnum():
+            logger.error('Error: label %s contains characters other than alphanumeric and underscore', pargs.gisoLabel[0])
+            logger.error('Info : Non-alphanumeric characters except underscore are not allowed in GISO label ')
+            sys.exit(-1)
 
     return pargs
 
@@ -1686,6 +1695,9 @@ def main(argv):
             final_rpm_files = []
             local_card_arch_files = []
             for arch in supp_arch:
+                if arch == "arm" and argv.x86_only:
+                    logger.info("\nSkipping arm rpms as given x86_only option")
+                    continue
                 arch_rpm_files = map(lambda rpm: rpm.file_name,
                                      rpm_db.get_cisco_rpms_by_vm_arch(vm_type, 
                                                                       arch) +
@@ -1712,6 +1724,9 @@ def main(argv):
             missing = False
             missing_arch_rpms = rpm_db.get_missing_arch_rpm(vm_type, supp_arch)
             for arch in missing_arch_rpms.keys():
+                if arch == "arm" and argv.x86_only:
+                    logger.debug("Skipping arm rpms in missing_arch_rpms check as given x86_only option")
+                    continue
                 map(lambda x: logger.error("\tError: Missing %s.%s.rpm" % 
                                            (x, arch)),
                     missing_arch_rpms[arch])
